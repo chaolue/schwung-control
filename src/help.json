@@ -1,0 +1,155 @@
+{
+  "title": "Custom MIDI Control",
+  "children": [
+    {
+      "title": "Overview",
+      "lines": [
+        "Custom MIDI control",
+        "for Schwung on",
+        "Move.",
+        "",
+        "16 banks of",
+        "configurable pads,",
+        "knobs, buttons",
+        "",
+        "Three output modes:",
+        " external, move,",
+        " schwung"
+      ]
+    },
+    {
+      "title": "Launch",
+      "lines": [
+        "Open from Tools Menu:",
+        " Shift + Step 13"
+      ]
+    },
+    {
+      "title": "Navigation",
+      "lines": [
+        "Back: Exit",
+        "Menu: Settings",
+        "Step 1-16: Bank",
+        "",
+        "In Settings:",
+        "Back: Exit",
+        "Jog: Scroll",
+        "Jog click: Edit"
+      ]
+    },
+    {
+      "title": "Settings - Pad",
+      "lines": [
+        "Select pad: press it",
+        "",
+        "Note: MIDI note",
+        "Name: Custom label",
+        "Colour: LED (0-127)",
+        "Pad Level: %",
+        "Choke Grp: 0-8"
+      ]
+    },
+    {
+      "title": "Settings - Knob",
+      "lines": [
+        "Select knob: touch it",
+        "",
+        "CC: MIDI CC",
+        "Name: Custom label",
+        "Colour: Scheme (0-3)",
+        "Min/Max: Range",
+        "CC Relative: On/Off"
+      ]
+    },
+    {
+      "title": "Settings - Button",
+      "lines": [
+        "Select button: press",
+        "",
+        "CC: MIDI CC",
+        "Name: Custom label",
+        "Colour: LED colour"
+      ]
+    },
+    {
+      "title": "Settings - Bank",
+      "lines": [
+        "Select bank: press",
+        "",
+        "Name: Custom label",
+        "MIDI Ch: 1-16",
+        "Output: ext/move/sch",
+        "Master Pad Level: %",
+        "Min Pad Level: 0-127",
+        "Note Offs: On/Off",
+        "Show Overlay: On/Off",
+        "H/light: 0-127"
+      ]
+    },
+    {
+      "title": "Output Modes",
+      "lines": [
+        "external: USB MIDI",
+        " move: Move synths",
+        " schwung: Schwung",
+        "",
+        "Different banks can",
+        "use different"
+      ]
+    },
+    {
+      "title": "Velocity",
+      "lines": [
+        "Output = Input ×",
+        " (Pad Level / 100)",
+        " (Master Level / 100)",
+        "",
+        "Capped at 127,",
+        "min at Bank's Min"
+      ]
+    },
+    {
+      "title": "Choke Groups",
+      "lines": [
+        "Pads in same group",
+        "cut each other off.",
+        "",
+        "Perfect for hi-hats:",
+        "Pad 1: Closed (Grp 1)",
+        "Pad 2: Open (Grp 1)"
+      ]
+    },
+    {
+      "title": "Relative Knobs",
+      "lines": [
+        "Absolute (default):",
+        " Position = Value",
+        "",
+        "Relative:",
+        " Turn = +/- change",
+        " No jumping"
+      ]
+    },
+    {
+      "title": "Visual Feedback",
+      "lines": [
+        "White pulse: Selected",
+        "White flash: Pad hit",
+        "Knob LEDs: Value",
+        "Step LEDs: Active"
+      ]
+    },
+    {
+      "title": "Configuration",
+      "lines": [
+        "Stored at:",
+        " /data/UserData/",
+        " schwung/",
+        " modules/overtake/",
+        " control/config.json",
+        "",
+        "Backup via SCP/SFTP"
+      ]
+    }
+  ]
+}

@@ -1,10 +1,10 @@
-# Custom MIDI controller for Move Everything
+# Custom MIDI controller for Schwung
 
-Customisable MIDI controller for use on Ableton Move with Move Everything installed.
+Customisable MIDI controller for use on Ableton Move with Schwung installed.
 
 ## Prerequisites
 
-- [Move Everything](https://github.com/charlesvestal/move-anything) installed on your Ableton Move
+- [Schwung](https://github.com/charlesvestal/schwung) installed on your Ableton Move
 
 ## Features
 
@@ -16,8 +16,8 @@ Customisable MIDI controller for use on Ableton Move with Move Everything instal
 - Change knobs between relative or absolute values
 - Assign a name to banks, pads, knobs and buttons
 - Adjust bank to not send MIDI note offs for pads (for drums)
-- Open in Overtake Mode (Shift + MastVol + JogClick)
-- Play Shadow Synths while in Overtake Mode on MIDI channel they are set to
+- Open from Tools Menu (Shift + Step13)
+- Three output options: external, move, schwung
 
 ## Building
 
@@ -27,7 +27,7 @@ Customisable MIDI controller for use on Ableton Move with Move Everything instal
 
 ## Installation
 
-Through the Move Everything store. Or manually:
+Through the Schwung module store (move.local:7700/modules). Or manually:
 
 ```bash
 ./scripts/install.sh
@@ -36,8 +36,8 @@ Through the Move Everything store. Or manually:
 
 ## Quick Start Guide
 
-### 1. Launch the Controller in Overtake Mode
-- Open **Move Everything** Overtake Mode (Shift + MastVol + JogWheelClick)
+### 1. Launch the Controller from the Tools Menu
+- Open the Tools Menu (Shift + Step13)
 - Navigate to **Custom MIDI Control**
 
 ### 2. First Test
@@ -113,13 +113,13 @@ Press a button (except Menu, Back or Shift):
 
 Press a step button:
 
-| Setting | Range | Description |
-|---------|-------|-------------|
-| **MIDI Channel** | 1-16 | MIDI channel for this bank |
+| Setting | Options | Description |
+|---------|---------|-------------|
 | **Name** | Text | Custom name for the bank |
+| **MIDI Channel** | 1-16 | MIDI channel for this bank |
+| **Output** | external/move/schwung | MIDI output destination |
 | **Master Pad Level** | 0-200% | Velocity multiplier for all pads |
 | **Min Pad Level** | 0-127 | Velocity minimum for all pads |
-| **Use Shadow Synths** | On/Off | Route to Move's internal synths |
 | **Note Offs** | On/Off | Send note-off messages |
 | **Show Overlay** | On/Off | Display info when pressing pads/knobs |
 | **H/light Colour** | 0-127 | Pad press highlight colour (default: white, 0: no highlight) |
@@ -182,17 +182,22 @@ Master Level: 150%
 Output: 100 × 0.9 × 1.5 = 135 (max capped at 127, min at Bank's Min Pad Level)
 ```
 
-### Shadow Mode
+### Output Options
 
-**Shadow Mode (On):** MIDI goes to Move Everything's sound generators
-- Use when you want to play Move Everything's built-in sounds
-- No external MIDI device needed
-
-**Shadow Mode (Off):** MIDI goes to external devices via USB
+**Output (external):** MIDI goes to external devices via USB
 - Use with external synths, DAWs, or hardware
 - Requires MIDI device connected
+- Default setting
 
-**Tip:** You can have different banks in different modes - Bank 1 for Move Everything's synths, Bank 2 for external gear!
+**Output (move):** MIDI goes to Move's internal instruments
+- Use when you want to play Move's built-in drums and/or synths
+- No external MIDI device needed
+
+**Output (schwung):** MIDI goes to Schwung's sound generators
+- Use when you want to play Schwung's built-in sounds
+- No external MIDI device needed
+
+**Tip:** You can have different banks in different output modes - Bank 1 for external gear, Bank 2 for Move's synths, Bank 3 for Schwung!
 
 ### Note-Offs
 
@@ -246,7 +251,7 @@ Knob LEDs change brightness based on value!
 
 Your configuration is stored in:
 ```
-/data/UserData/move-anything/modules/overtake/control/config.json
+/data/UserData/schwung/modules/overtake/control/config.json
 ```
 
 **To backup:**
@@ -283,7 +288,7 @@ Your configuration is stored in:
 - MIDI Channel: 1
 - Master Pad Level: 100%
 - Min Pad Level: 0
-- Shadow Mode: Off
+- Output: external
 - Note-Offs: On
 - Show Overlay: On
 - H/light Colour: White

@@ -3,20 +3,20 @@
  *
 */
 
-import { setButtonLED, setLED, clearAllLEDs } from '/data/UserData/move-anything/shared/input_filter.mjs';
+import { setButtonLED, setLED, clearAllLEDs } from '/data/UserData/schwung/shared/input_filter.mjs';
 import { MoveBack, MoveMenu, MovePlay, MoveRec, MoveCapture, MoveRecord, MoveLoop, MoveMute, MoveDelete,
          MoveCopy, MoveUndo, MoveShift,MoveUp, MoveDown, MoveLeft, MoveRight, MoveMainKnob, MoveMainButton,
          MoveRow1, MoveRow2, MoveRow3, MoveRow4, MoveKnob1, MoveKnob2, MoveKnob3, MoveKnob4,
          MoveKnob5, MoveKnob6, MoveKnob7, MoveKnob8, MoveMaster, MoveCCButtons,
          White, Black, BrightRed, BrightGreen, OrangeRed, Cyan, DarkGrey, WhiteLedDim, WhiteLedBright,
-         colourNames, MovePads, midiNotes} from '/data/UserData/move-anything/shared/constants.mjs';
+         colourNames, MovePads, midiNotes} from '/data/UserData/schwung/shared/constants.mjs';
 import { drawMenuHeader, drawMenuList, drawMenuFooter, showOverlay, tickOverlay, drawOverlay,
-         dismissOverlayOnInput, menuLayoutDefaults } from '/data/UserData/move-anything/shared/menu_layout.mjs';
-import { createValue, createToggle, formatItemValue } from '/data/UserData/move-anything/shared/menu_items.mjs';
-import { createMenuState, handleMenuInput } from '/data/UserData/move-anything/shared/menu_nav.mjs';
-import { createMenuStack } from '/data/UserData/move-anything/shared/menu_stack.mjs';
+         dismissOverlayOnInput, menuLayoutDefaults } from '/data/UserData/schwung/shared/menu_layout.mjs';
+import { createValue, createEnum, createToggle, formatItemValue } from '/data/UserData/schwung/shared/menu_items.mjs';
+import { createMenuState, handleMenuInput } from '/data/UserData/schwung/shared/menu_nav.mjs';
+import { createMenuStack } from '/data/UserData/schwung/shared/menu_stack.mjs';
 import { openTextEntry, isTextEntryActive, handleTextEntryMidi, drawTextEntry,
-         tickTextEntry } from '/data/UserData/move-anything/shared/text_entry.mjs';
+         tickTextEntry } from '/data/UserData/schwung/shared/text_entry.mjs';
 import * as os from 'os';
 
 /* ============================================================================
@@ -77,7 +77,7 @@ const DEFAULTS = {
         CHANNEL: 1,
         LEVEL: 100,
         MIN: 0,
-        SHADOW: 0,
+        OUTPUT: 'external',
         NOTEOFFS: 1,
         OVERLAY: 1,
         NAME: "(empty)",
@@ -99,7 +99,7 @@ let settingsMenuState = null;
 let settingsMenuStack = null;
 
 /*    */
-const CONFIG_LOCATION = "/data/UserData/move-anything/modules/overtake/control/config.json";
+const CONFIG_LOCATION = "/data/UserData/schwung/modules/overtake/control/config.json";
 let config = {};
 let banks = new Array(NUM_BANKS);
 let selected = 3;  /* 0 = pad, 1 = knob, 2 = button, 3 = bank */
@@ -145,8 +145,8 @@ function getBank(index) {
         set level(v) { config[index].level = v; },
         get min() { return config[index].min ?? DEFAULTS.BANK.MIN; },
         set min(v) { config[index].min = v; },
-        get shadow() { return config[index].shadow ?? DEFAULTS.BANK.SHADOW; },
-        set shadow(v) { config[index].shadow = v; },
+        get output() { return config[index].output ?? DEFAULTS.BANK.OUTPUT; },
+        set output(v) { config[index].output = v; },
         get noteoffs() { return config[index].noteoffs ?? DEFAULTS.BANK.NOTEOFFS; },
         set noteoffs(v) { config[index].noteoffs = v; },
         get overlay() { return config[index].overlay ?? DEFAULTS.BANK.OVERLAY; },
@@ -525,6 +525,10 @@ function getSettingsItems() {
         ];
     } else {  // bank config
         return [
+            createValue('Name', {
+                get: () => banks[selectedBank].name || "(empty)",
+                set: (v) => { needsRedraw = true; }
+            }),
             createValue('MIDI Channel', {
                 get: () => banks[selectedBank].channel || 1,
                 set: (v) => { banks[selectedBank].channel = v; },
@@ -532,9 +536,11 @@ function getSettingsItems() {
                 max: 16,
                 step: 1
             }),
-            createValue('Name', {
-                get: () => banks[selectedBank].name || "(empty)",
-                set: (v) => { needsRedraw = true; }
+            createEnum('Output', {
+                get: () => banks[selectedBank].output ?? 'external',
+                set: (v) => { banks[selectedBank].output = v; },
+                options: ['external', 'move', 'schwung'],
+                format: (v) => v.charAt(0).toUpperCase() + v.slice(1)
             }),
             createValue('Master Pad Level', {
                 get: () => banks[selectedBank].level ?? 100,
@@ -550,10 +556,6 @@ function getSettingsItems() {
                 min: 0,
                 max: 127,
                 step: 1
-            }),
-            createToggle('Use Shadow Synths', {
-                get: () => banks[selectedBank].shadow ?? 0,
-                set: (v) => { banks[selectedBank].shadow = v ? 1 : 0; }
             }),
             createToggle('Note Offs', {
                 get: () => banks[selectedBank].noteoffs ?? 1,
@@ -727,12 +729,14 @@ function handleCC(cc, val) {
             selectedPad = -1;
 
             let ccOut = banks[selectedBank].buttons[i].cc;
-            if (banks[selectedBank].shadow) {
+            if (banks[selectedBank].output === 'schwung') {
                 try {
                     shadow_send_midi_to_dsp([0xB0 | channel, ccOut, val]);
                 } catch {
                     console.log("Shadow mode MIDI playback not available.");
                 }
+            } else if (banks[selectedBank].output === 'move') {
+                move_midi_inject_to_move([0x2B, 0xB0 | channel, ccOut, val]);
             } else {
                 move_midi_external_send([cable << 4 | (0xB0 / 16), 0xB0 | channel, ccOut, val]);
             }
@@ -775,12 +779,14 @@ function handleCC(cc, val) {
                 if (valOut > maxOut) valOut = maxOut;
                 banks[selectedBank].knobs[i].value = valOut;
             }
-            if (banks[selectedBank].shadow) {
+            if (banks[selectedBank].output === 'schwung') {
                 try {
                     shadow_send_midi_to_dsp([0xB0 | channel, ccOut, valOut]);
                 } catch {
                     console.log("Shadow mode MIDI playback not available.");
                 }
+            } else if (banks[selectedBank].output === 'move') {
+                move_midi_inject_to_move([0x2B, 0xB0 | channel, ccOut, valOut]);
             } else {
                 move_midi_external_send([cable << 4 | (0xB0 / 16), 0xB0 | channel, ccOut, valOut]);
             }
@@ -932,7 +938,7 @@ function handleNote(note, vel) {
         }
 
         /* send midi */
-        if (banks[selectedBank].shadow) {
+        if (banks[selectedBank].output === 'schwung') {
             try {
                 shadow_send_midi_to_dsp([0x90 | channel, noteOut, velOut]);
                 if (chokes[padChokeGrp] != -1) {
@@ -941,6 +947,12 @@ function handleNote(note, vel) {
                 }
             } catch {
                 console.log("Shadow mode MIDI playback not available.");
+            }
+        } else if (banks[selectedBank].output === 'move') {
+            move_midi_inject_to_move([0x29, 0x90 | channel, noteOut, velOut]);
+            if (chokes[padChokeGrp] != -1) {
+                move_midi_inject_to_move([0x28, 0x80 | channel, chokes[padChokeGrp], 0]);
+                chokes[padChokeGrp] = -1;
             }
         } else {
             move_midi_external_send([cable << 4 | (0x90 / 16), 0x90 | channel, noteOut, velOut]);
@@ -962,12 +974,14 @@ function handleNote(note, vel) {
         /* send midi */
         let noteOut = banks[selectedBank].pads[padIdx].note;
         if (banks[selectedBank].noteoffs) {
-            if (banks[selectedBank].shadow) {
+            if (banks[selectedBank].output === 'schwung') {
                 try {
                     shadow_send_midi_to_dsp([0x80 | channel, noteOut, vel]);
                 } catch {
                     console.log("Shadow mode MIDI playback not available.");
                 }
+            } else if (banks[selectedBank].output === 'move') {
+                move_midi_inject_to_move([0x28, 0x80 | channel, noteOut, vel]);
             } else {
                 move_midi_external_send([cable << 4 | (0x80 / 16), 0x80 | channel, noteOut, vel]);
             }
@@ -1007,12 +1021,14 @@ function onMidiMessage(msg) {
     } else if (status === 0xA0) {
         if (data2 > 18) {  /* ignore light aftertouch */
             let channel = banks[selectedBank].channel - 1;
-            if (banks[selectedBank].shadow) {
+            if (banks[selectedBank].output === 'schwung') {
                 try {
                     shadow_send_midi_to_dsp([status | channel, data1, data2]);
                 } catch {
                     console.log("Shadow mode MIDI playback not available.");
                 }
+            } else if (banks[selectedBank].output === 'move') {
+                move_midi_inject_to_move([0x2A, status | channel, data1, data2]);
             } else {
                 move_midi_external_send([cable << 4 | (status / 16), status | channel, data1, data2]);
             }
