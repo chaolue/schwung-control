@@ -119,7 +119,7 @@ Press a step button:
 | **Name** | Text | Custom name for the bank |
 | **MIDI Channel** | 1-16 | MIDI channel for this bank |
 | **Output** | external/move/schwung | MIDI output destination |
-| **Master Pad Level** | 0-200% | Velocity multiplier for all pads |
+| **Master Pad Level** | 25-250% | Velocity multiplier for all pads |
 | **Min Pad Level** | 0-127 | Velocity minimum for all pads |
 | **Note Offs** | On/Off | Send note-off messages |
 | **Show Overlay** | On/Off | Display info when pressing pads/knobs |
@@ -277,6 +277,7 @@ Your configuration is stored in:
 **New Knob Defaults:**
 - CC: 70 + knob number (CC71-CC79)
 - Range: 0-127
+- Multiplier: 1x
 - Mode: Absolute
 - Colour: Neutral (0)
 
@@ -288,7 +289,7 @@ Your configuration is stored in:
 **New Bank Defaults:**
 - MIDI Channel: 1
 - Master Pad Level: 100%
-- Min Pad Level: 0
+- Min Pad Level: 1
 - Output: external
 - Note-Offs: On
 - Show Overlay: On

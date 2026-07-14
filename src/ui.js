@@ -554,13 +554,13 @@ function getSettingsItems() {
             createValue('Master Pad Level', {
                 get: () => banks[selectedBank].level ?? 100,
                 set: (v) => { banks[selectedBank].level = v; },
-                min: 0,
-                max: 200,
+                min: 25,
+                max: 250,
                 step: 1,
                 format: (v) => `${v}%`
             }),
             createValue('Min Pad Level', {
-                get: () => banks[selectedBank].min ?? 0,
+                get: () => banks[selectedBank].min ?? 1,
                 set: (v) => { banks[selectedBank].min = v; },
                 min: 0,
                 max: 127,
