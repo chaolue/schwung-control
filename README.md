@@ -15,7 +15,7 @@ Customisable MIDI controller for use on Ableton Move with Schwung installed.
 - Change colour of pads, knobs and buttons
 - Change knobs between relative or absolute values
 - Assign a name to banks, pads, knobs and buttons
-- Adjust pad release behaviour per bank to not send MIDI note offs (for drums)
+- Adjust pad release behaviour per bank
 - Open from Tools Menu (Shift + Step13)
 - Three output options: external, move, schwung
 
@@ -209,9 +209,13 @@ Output: 100 × 0.9 × 1.5 = 135 (max capped at 127, min at Bank's Min Pad Level)
 - Use for melodic instruments
 - Allows notes to sustain until you release
 
-**Pad-Offs (Off):** Don't send note-off messages
+**Pad-Offs (On Only):** Don't send note-off (or CC value) messages
 - Use for drum machines
 - Each hit is independent
+
+**Pad-Offs (Toggle):** Toggle between note-on/note-off (or CC value) messages
+- Use as a control surface
+
 
 ### Relative Knob Mode
 
@@ -294,5 +298,6 @@ Your configuration is stored in:
 - Min Pad Level: 1
 - Output: external
 - Pad-Offs: On/Off
+- Pad Mode Note
 - Show Overlay: On
 - H/light Colour: White
