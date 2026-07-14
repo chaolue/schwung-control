@@ -58,6 +58,7 @@
         "Name: Custom label",
         "Colour: Scheme (0-3)",
         "Min/Max: Range",
+        "Multiplier: 0.25x-8x",
         "CC Relative: On/Off"
       ]
     },

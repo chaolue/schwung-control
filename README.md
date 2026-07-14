@@ -97,6 +97,7 @@ Touch a knob:
 | **Colour** | 0-3 | LED colour scheme |
 | **Min Value** | 0-127 | Minimum output value |
 | **Max Value** | 0-127 | Maximum output value |
+| **Multiplier** | 0.25x/0.5x/0.75x/1x/2x/3x/4x/6x/8x | Step size for absolute knob changes |
 | **CC Relative** | On/Off | Relative mode (for endless encoders) |
 
 ### Button Settings

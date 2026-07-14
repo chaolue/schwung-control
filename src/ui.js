@@ -67,6 +67,7 @@ const DEFAULTS = {
         MIN: 0,
         MAX: 127,
         RELATIVE: 0,
+        MULTIPLIER: 1,
         COLOUR: Black,
         NAME: "(empty)"
     },
@@ -207,7 +208,9 @@ function getKnobs(bankIndex) {
         get max() { return config[bankIndex].knobs[i]?.max ?? DEFAULTS.KNOB.MAX; },
         set max(v) { ensureKnob(i).max = v; },
         get relative() { return config[bankIndex].knobs[i]?.relative ?? DEFAULTS.KNOB.RELATIVE; },
-        set relative(v) { ensureKnob(i).relative = v; }
+        set relative(v) { ensureKnob(i).relative = v; },
+        get multiplier() { return config[bankIndex].knobs[i]?.multiplier ?? DEFAULTS.KNOB.MULTIPLIER; },
+        set multiplier(v) { ensureKnob(i).multiplier = v; }
     }));
 }
 
@@ -493,6 +496,12 @@ function getSettingsItems() {
                 max: 127,
                 step: 1
             }),
+            createEnum('Multiplier', {
+                get: () => banks[selectedBank].knobs[selectedKnob].multiplier ?? 1,
+                set: (v) => { banks[selectedBank].knobs[selectedKnob].multiplier = v; },
+                options: [0.25, 0.5, 0.75, 1, 2, 3, 4, 6, 8],
+                format: (v) => `${v}x`
+            }),
             createToggle('CC Relative', {
                 get: () => banks[selectedBank].knobs[selectedKnob].relative ?? 0,
                 set: (v) => {
@@ -767,39 +776,42 @@ function handleCC(cc, val) {
             let ccOut = banks[selectedBank].knobs[i].cc;
             let minOut = banks[selectedBank].knobs[i].min;
             let maxOut = banks[selectedBank].knobs[i].max;
+            let multiplier = banks[selectedBank].knobs[i].multiplier ?? 1;
             let valOut = val;
+            let storedValue = banks[selectedBank].knobs[i].value;
             if (!banks[selectedBank].knobs[selectedKnob].relative) {
-                valOut = banks[selectedBank].knobs[i].value;
+                valOut = storedValue;
                 if (val === 127) {
-                    valOut -=1;
+                    valOut -= multiplier;
                 } else if (val === 1) {
-                    valOut +=1;
+                    valOut += multiplier;
                 }
                 if (valOut < minOut) valOut = minOut;
                 if (valOut > maxOut) valOut = maxOut;
                 banks[selectedBank].knobs[i].value = valOut;
             }
+            const midiValue = Math.round(valOut);
             if (banks[selectedBank].output === 'schwung') {
                 try {
-                    shadow_send_midi_to_dsp([0xB0 | channel, ccOut, valOut]);
+                    shadow_send_midi_to_dsp([0xB0 | channel, ccOut, midiValue]);
                 } catch {
                     console.log("Shadow mode MIDI playback not available.");
                 }
             } else if (banks[selectedBank].output === 'move') {
-                move_midi_inject_to_move([0x2B, 0xB0 | channel, ccOut, valOut]);
+                move_midi_inject_to_move([0x2B, 0xB0 | channel, ccOut, midiValue]);
             } else {
-                move_midi_external_send([cable << 4 | (0xB0 / 16), 0xB0 | channel, ccOut, valOut]);
+                move_midi_external_send([cable << 4 | (0xB0 / 16), 0xB0 | channel, ccOut, midiValue]);
             }
 
             if (viewMode === VIEW_MAIN) {
                 let knobs = banks[selectedBank].knobs;
-                let colour = getColourForKnobValue(knobs[i].colour, valOut);
+                let colour = getColourForKnobValue(knobs[i].colour, midiValue);
                 if (cachedKnobColour[selectedKnob] != colour) {
                     enqueueCcLED(i+71, colour);
                     cachedKnobColour[selectedKnob] = colour;
                 }
                 if (banks[selectedBank].overlay) {
-                    if (showKnobOverlay(selectedKnob, valOut)) needsRedraw = true;
+                    if (showKnobOverlay(selectedKnob, midiValue)) needsRedraw = true;
                 }
             }
             return;
