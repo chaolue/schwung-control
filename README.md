@@ -15,7 +15,7 @@ Customisable MIDI controller for use on Ableton Move with Schwung installed.
 - Change colour of pads, knobs and buttons
 - Change knobs between relative or absolute values
 - Assign a name to banks, pads, knobs and buttons
-- Adjust bank to not send MIDI note offs for pads (for drums)
+- Adjust pad release behaviour per bank to not send MIDI note offs (for drums)
 - Open from Tools Menu (Shift + Step13)
 - Three output options: external, move, schwung
 
@@ -74,7 +74,8 @@ Select a pad (press it):
 
 | Setting | Range | Description |
 |---------|-------|-------------|
-| **Note** | 0-127 | MIDI note number to send |
+| **Note** | 0-127 | MIDI note number to send (Note mode) |
+| **CC** | 0-127 | MIDI CC number to send (CC mode) |
 | **Name** | Text | Custom name for the pad |
 | **Colour** | 0-127 | LED colour  |
 | **Pad Level** | 0-200% | Velocity multiplier |
@@ -121,7 +122,8 @@ Press a step button:
 | **Output** | external/move/schwung | MIDI output destination |
 | **Master Pad Level** | 0-200% | Velocity multiplier for all pads |
 | **Min Pad Level** | 0-127 | Velocity minimum for all pads |
-| **Note Offs** | On/Off | Send note-off messages |
+| **Pad Offs** | On/Off/Toggle | Pad-off behavior: On/Off (default), On Only, or Toggle |
+| **Pad Mode** | Note/CC | Pads send MIDI notes or CC values |
 | **Show Overlay** | On/Off | Display info when pressing pads/knobs |
 | **H/light Colour** | 0-127 | Pad press highlight colour (default: white, 0: no highlight) |
 
@@ -200,14 +202,14 @@ Output: 100 × 0.9 × 1.5 = 135 (max capped at 127, min at Bank's Min Pad Level)
 
 **Tip:** You can have different banks in different output modes - Bank 1 for external gear, Bank 2 for Move's synths, Bank 3 for Schwung!
 
-### Note-Offs
+### Pad-Offs
 
-**Note-Offs (On):** Send note-off when pad is released
+**Pad-Offs (On/Off):** Send note-off when pad is released
 - Default behavior
 - Use for melodic instruments
 - Allows notes to sustain until you release
 
-**Note-Offs (Off):** Don't send note-off messages
+**Pad-Offs (Off):** Don't send note-off messages
 - Use for drum machines
 - Each hit is independent
 
@@ -290,6 +292,6 @@ Your configuration is stored in:
 - Master Pad Level: 100%
 - Min Pad Level: 0
 - Output: external
-- Note-Offs: On
+- Pad-Offs: On/Off
 - Show Overlay: On
 - H/light Colour: White
