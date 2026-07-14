@@ -985,11 +985,12 @@ function handleNote(note, vel) {
         if (velOut < minPadLevel) velOut = minPadLevel;
 
         /* toggle mode: flip active state on each press */
-        const isToggleOff = padMode === 'note' && padOffMode === 'toggle' && toggledNotes.has(noteOut);
+        const toggleKey = `${selectedBank}:${padIdx}`;
+        const isToggleOff = padOffMode === 'toggle' && toggledNotes.has(toggleKey);
         if (isToggleOff) {
-            toggledNotes.delete(noteOut);
-        } else if (padMode === 'note' && padOffMode === 'toggle') {
-            toggledNotes.add(noteOut);
+            toggledNotes.delete(toggleKey);
+        } else if (padOffMode === 'toggle') {
+            toggledNotes.add(toggleKey);
         }
 
         /* choke group handling */
@@ -1029,14 +1030,14 @@ function handleNote(note, vel) {
         function sendNoteOff() {
             if (banks[selectedBank].output === 'schwung') {
                 try {
-                    shadow_send_midi_to_dsp([0x80 | channel, noteOut, vel]);
+                    shadow_send_midi_to_dsp([0x80 | channel, noteOut, 0]);
                 } catch {
                     console.log("Shadow mode MIDI playback not available.");
                 }
             } else if (banks[selectedBank].output === 'move') {
-                move_midi_inject_to_move([0x28, 0x80 | channel, noteOut, vel]);
+                move_midi_inject_to_move([0x28, 0x80 | channel, noteOut, 0]);
             } else {
-                move_midi_external_send([cable << 4 | (0x80 / 16), 0x80 | channel, noteOut, vel]);
+                move_midi_external_send([cable << 4 | (0x80 / 16), 0x80 | channel, noteOut, 0]);
             }
         }
 
@@ -1054,11 +1055,18 @@ function handleNote(note, vel) {
             }
         }
 
+        let displayVelOut = velOut;
         if (padMode === 'cc') {
-            sendCc(velOut);
+            if (padOffMode === 'toggle' && isToggleOff) {
+                sendCc(0);
+                displayVelOut = 0;
+            } else {
+                sendCc(velOut);
+            }
         } else if (padOffMode === 'toggle') {
             if (isToggleOff) {
                 sendNoteOff();
+                displayVelOut = 0;
             } else {
                 sendNoteOn();
             }
@@ -1068,7 +1076,7 @@ function handleNote(note, vel) {
 
         if (padChokeGrp) chokes[padChokeGrp] = noteOut;
         if (viewMode === VIEW_MAIN && highlightColour != 0) {
-            if (padMode === 'note' && padOffMode === 'toggle') {
+            if (padOffMode === 'toggle') {
                 if (isToggleOff) {
                     enqueueNoteLED(note, banks[selectedBank].pads[selectedPad].colour);
                 } else {
@@ -1078,7 +1086,7 @@ function handleNote(note, vel) {
                 enqueueNoteLED(note, highlightColour);
             }
         }
-        if (viewMode === VIEW_MAIN && banks[selectedBank].overlay) showPadOverlay(padIdx, velOut);
+        if (viewMode === VIEW_MAIN && banks[selectedBank].overlay) showPadOverlay(padIdx, displayVelOut);
         needsRedraw = true;
         return;
     }
@@ -1090,6 +1098,7 @@ function handleNote(note, vel) {
         const padMode = banks[selectedBank].padmode ?? 'note';
         let noteOut = banks[selectedBank].pads[padIdx].note;
         const padOffMode = banks[selectedBank].padoffs ?? 'pad-on-off';
+        const releaseToggleKey = `${selectedBank}:${padIdx}`;
         if (padMode === 'note' && padOffMode === 'pad-on-off') {
             if (banks[selectedBank].output === 'schwung') {
                 try {
@@ -1106,7 +1115,7 @@ function handleNote(note, vel) {
 
         const releaseHighlightColour = banks[selectedBank].hlcolour;
         if (viewMode === VIEW_MAIN && releaseHighlightColour != 0) {
-            if (padMode === 'note' && padOffMode === 'toggle' && toggledNotes.has(noteOut)) {
+            if (padOffMode === 'toggle' && toggledNotes.has(releaseToggleKey)) {
                 enqueueNoteLED(note, releaseHighlightColour);
             } else {
                 enqueueNoteLED(note, banks[selectedBank].pads[padIdx].colour);
