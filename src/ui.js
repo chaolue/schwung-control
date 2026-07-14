@@ -56,6 +56,7 @@ const BUTTON_NAMES = ["Play", "Rec", "Capture", "Record", "Loop", "Mute", "Delet
 const DEFAULTS = {
     PAD: {
         NOTE_OFFSET: 36,
+        CC_OFFSET: 1,
         LEVEL: 100,
         COLOUR: Black,
         CHOKEGRP: 0,
@@ -79,7 +80,8 @@ const DEFAULTS = {
         LEVEL: 100,
         MIN: 0,
         OUTPUT: 'external',
-        NOTEOFFS: 1,
+        PAD_OFFS: 'pad-on-off',
+        PAD_MODE: 'note',
         OVERLAY: 1,
         NAME: "(empty)",
         HIGHLIGHTCOLOUR: White
@@ -109,6 +111,7 @@ let selectedKnob = -1;
 let selectedButton = -1;
 let selectedBank = 0;
 let chokes = [];
+let toggledNotes = new Set();
 let cable = 2;
 const LED_MSGS_PER_TICK = 8;
 const ledQueue = [];
@@ -148,8 +151,10 @@ function getBank(index) {
         set min(v) { config[index].min = v; },
         get output() { return config[index].output ?? DEFAULTS.BANK.OUTPUT; },
         set output(v) { config[index].output = v; },
-        get noteoffs() { return config[index].noteoffs ?? DEFAULTS.BANK.NOTEOFFS; },
-        set noteoffs(v) { config[index].noteoffs = v; },
+        get padoffs() { return config[index].padoffs ?? DEFAULTS.BANK.PAD_OFFS; },
+        set padoffs(v) { config[index].padoffs = v; },
+        get padmode() { return config[index].padmode ?? DEFAULTS.BANK.PAD_MODE; },
+        set padmode(v) { config[index].padmode = v; },
         get overlay() { return config[index].overlay ?? DEFAULTS.BANK.OVERLAY; },
         set overlay(v) { config[index].overlay = v; },
         get hlcolour() { return config[index].hlcolour ?? DEFAULTS.BANK.HIGHLIGHTCOLOUR; },
@@ -174,6 +179,8 @@ function getPads(bankIndex) {
     return new Array(NUM_PADS).fill(0).map((_, i) => ({
         get note() { return config[bankIndex].pads[i]?.note ?? (i + DEFAULTS.PAD.NOTE_OFFSET); },
         set note(v) { ensurePad(i).note = v; },
+        get cc() { return config[bankIndex].pads[i]?.cc ?? (i + DEFAULTS.PAD.CC_OFFSET); },
+        set cc(v) { ensurePad(i).cc = v; },
         get name() { return config[bankIndex].pads[i]?.name ?? DEFAULTS.PAD.NAME; },
         set name(v) { ensurePad(i).name = v; },
         get colour() { return config[bankIndex].pads[i]?.colour ?? DEFAULTS.PAD.COLOUR; },
@@ -292,9 +299,16 @@ function showButtonOverlay(buttonNum, val = "") {
 /* Query pad mapping info and show overlay */
 function showPadOverlay(padNum, vel) {
     let name = banks[selectedBank].pads[padNum].name;
-    const note = banks[selectedBank].pads[padNum].note;
-    const noteInfo = `Note: ${midiNotes[note]} (${note})`;
-    const displayName = (name !== DEFAULTS.PAD.NAME) ? name : noteInfo;
+    const padMode = banks[selectedBank].padmode ?? 'note';
+    let valueInfo;
+    if (padMode === 'cc') {
+        const cc = banks[selectedBank].pads[padNum].cc;
+        valueInfo = `CC: ${cc}`;
+    } else {
+        const note = banks[selectedBank].pads[padNum].note;
+        valueInfo = `Note: ${midiNotes[note]} (${note})`;
+    }
+    const displayName = (name !== DEFAULTS.PAD.NAME) ? name : valueInfo;
     showOverlay(displayName, `${vel}  Pad: ${padNum + 1}`, OVERLAY_DURATION);
     return true;
 }
@@ -423,15 +437,8 @@ function drawMainView() {
 /* Build settings menu items using shared menu item creators */
 function getSettingsItems() {
     if (selected === 0) {  // pad config
-        return [
-            createValue('Note', {
-                get: () => banks[selectedBank].pads[selectedPad].note ?? 0,
-                set: (v) => { banks[selectedBank].pads[selectedPad].note = v; },
-                min: 0,
-                max: 127,
-                step: 1,
-                format: (v) => `${midiNotes[v]} (${v})`
-            }),
+        const padMode = banks[selectedBank].padmode ?? 'note';
+        const padItems = [
             createValue('Name', {
                 get: () => banks[selectedBank].pads[selectedPad].name || "(empty)",
                 set: (v) => { needsRedraw = true; }
@@ -461,6 +468,25 @@ function getSettingsItems() {
                 format: (v) => v === 0 ? 'Off' : `${v}`
             }),
         ];
+        if (padMode === 'cc') {
+            padItems.unshift(createValue('CC', {
+                get: () => banks[selectedBank].pads[selectedPad].cc ?? 0,
+                set: (v) => { banks[selectedBank].pads[selectedPad].cc = v; },
+                min: 0,
+                max: 127,
+                step: 1
+            }));
+        } else {
+            padItems.unshift(createValue('Note', {
+                get: () => banks[selectedBank].pads[selectedPad].note ?? 0,
+                set: (v) => { banks[selectedBank].pads[selectedPad].note = v; },
+                min: 0,
+                max: 127,
+                step: 1,
+                format: (v) => `${midiNotes[v]} (${v})`
+            }));
+        }
+        return padItems;
     } else if (selected === 1) {  // knob config
         return [
             createValue('CC', {
@@ -566,9 +592,22 @@ function getSettingsItems() {
                 max: 127,
                 step: 1
             }),
-            createToggle('Note Offs', {
-                get: () => banks[selectedBank].noteoffs ?? 1,
-                set: (v) => { banks[selectedBank].noteoffs = v ? 1 : 0; }
+            createEnum('Pad Offs', {
+                get: () => banks[selectedBank].padoffs ?? 'pad-on-off',
+                set: (v) => { banks[selectedBank].padoffs = v; },
+                options: ['pad-on-off', 'pad-on-only', 'toggle'],
+                format: (v) => {
+                    if (v === 'pad-on-off') return 'On/Off';
+                    if (v === 'pad-on-only') return 'On Only';
+                    if (v === 'toggle') return 'Toggle';
+                    return v;
+                }
+            }),
+            createEnum('Pad Mode', {
+                get: () => banks[selectedBank].padmode ?? 'note',
+                set: (v) => { banks[selectedBank].padmode = v; },
+                options: ['note', 'cc'],
+                format: (v) => v === 'cc' ? 'CC' : 'Note'
             }),
             createToggle('Show Overlay', {
                 get: () => banks[selectedBank].overlay ?? 1,
@@ -931,8 +970,11 @@ function handleNote(note, vel) {
         selectedButton = -1;
         selectedPad = padIdx;
         selected = 0;
+        const padMode = banks[selectedBank].padmode ?? 'note';
         let noteOut = banks[selectedBank].pads[selectedPad].note;
+        let ccOut = banks[selectedBank].pads[selectedPad].cc;
         const highlightColour = banks[selectedBank].hlcolour;
+        const padOffMode = banks[selectedBank].padoffs ?? 'pad-on-off';
 
         /* edit velocity */
         let padLevel = banks[selectedBank].pads[selectedPad].level ?? 100;
@@ -942,6 +984,15 @@ function handleNote(note, vel) {
         if (velOut > 127) velOut = 127;
         if (velOut < minPadLevel) velOut = minPadLevel;
 
+        /* toggle mode: flip active state on each press */
+        const toggleKey = `${selectedBank}:${padIdx}`;
+        const isToggleOff = padOffMode === 'toggle' && toggledNotes.has(toggleKey);
+        if (isToggleOff) {
+            toggledNotes.delete(toggleKey);
+        } else if (padOffMode === 'toggle') {
+            toggledNotes.add(toggleKey);
+        }
+
         /* choke group handling */
         let padChokeGrp = banks[selectedBank].pads[selectedPad].chokegrp;
         if (padChokeGrp) {
@@ -950,32 +1001,92 @@ function handleNote(note, vel) {
         }
 
         /* send midi */
-        if (banks[selectedBank].output === 'schwung') {
-            try {
-                shadow_send_midi_to_dsp([0x90 | channel, noteOut, velOut]);
+        function sendNoteOn() {
+            if (banks[selectedBank].output === 'schwung') {
+                try {
+                    shadow_send_midi_to_dsp([0x90 | channel, noteOut, velOut]);
+                    if (chokes[padChokeGrp] != -1) {
+                        shadow_send_midi_to_dsp([0x80 | channel, chokes[padChokeGrp], 0]);
+                        chokes[padChokeGrp] = -1;
+                    }
+                } catch {
+                    console.log("Shadow mode MIDI playback not available.");
+                }
+            } else if (banks[selectedBank].output === 'move') {
+                move_midi_inject_to_move([0x29, 0x90 | channel, noteOut, velOut]);
                 if (chokes[padChokeGrp] != -1) {
-                    shadow_send_midi_to_dsp([0x80 | channel, chokes[padChokeGrp], 0]);
+                    move_midi_inject_to_move([0x28, 0x80 | channel, chokes[padChokeGrp], 0]);
                     chokes[padChokeGrp] = -1;
                 }
-            } catch {
-                console.log("Shadow mode MIDI playback not available.");
-            }
-        } else if (banks[selectedBank].output === 'move') {
-            move_midi_inject_to_move([0x29, 0x90 | channel, noteOut, velOut]);
-            if (chokes[padChokeGrp] != -1) {
-                move_midi_inject_to_move([0x28, 0x80 | channel, chokes[padChokeGrp], 0]);
-                chokes[padChokeGrp] = -1;
-            }
-        } else {
-            move_midi_external_send([cable << 4 | (0x90 / 16), 0x90 | channel, noteOut, velOut]);
-            if (chokes[padChokeGrp] != -1) {
-                move_midi_external_send([cable << 4 | (0x80 / 16), 0x80 | channel, chokes[padChokeGrp], 0]);
-                chokes[padChokeGrp] = -1;
+            } else {
+                move_midi_external_send([cable << 4 | (0x90 / 16), 0x90 | channel, noteOut, velOut]);
+                if (chokes[padChokeGrp] != -1) {
+                    move_midi_external_send([cable << 4 | (0x80 / 16), 0x80 | channel, chokes[padChokeGrp], 0]);
+                    chokes[padChokeGrp] = -1;
+                }
             }
         }
+
+        function sendNoteOff() {
+            if (banks[selectedBank].output === 'schwung') {
+                try {
+                    shadow_send_midi_to_dsp([0x80 | channel, noteOut, 0]);
+                } catch {
+                    console.log("Shadow mode MIDI playback not available.");
+                }
+            } else if (banks[selectedBank].output === 'move') {
+                move_midi_inject_to_move([0x28, 0x80 | channel, noteOut, 0]);
+            } else {
+                move_midi_external_send([cable << 4 | (0x80 / 16), 0x80 | channel, noteOut, 0]);
+            }
+        }
+
+        function sendCc(value) {
+            if (banks[selectedBank].output === 'schwung') {
+                try {
+                    shadow_send_midi_to_dsp([0xB0 | channel, ccOut, value]);
+                } catch {
+                    console.log("Shadow mode MIDI playback not available.");
+                }
+            } else if (banks[selectedBank].output === 'move') {
+                move_midi_inject_to_move([0x2B, 0xB0 | channel, ccOut, value]);
+            } else {
+                move_midi_external_send([cable << 4 | (0xB0 / 16), 0xB0 | channel, ccOut, value]);
+            }
+        }
+
+        let displayVelOut = velOut;
+        if (padMode === 'cc') {
+            if (padOffMode === 'toggle' && isToggleOff) {
+                sendCc(0);
+                displayVelOut = 0;
+            } else {
+                sendCc(velOut);
+            }
+        } else if (padOffMode === 'toggle') {
+            if (isToggleOff) {
+                sendNoteOff();
+                displayVelOut = 0;
+            } else {
+                sendNoteOn();
+            }
+        } else {
+            sendNoteOn();
+        }
+
         if (padChokeGrp) chokes[padChokeGrp] = noteOut;
-        if (viewMode === VIEW_MAIN && highlightColour != 0) enqueueNoteLED(note, highlightColour);
-        if (viewMode === VIEW_MAIN && banks[selectedBank].overlay) showPadOverlay(padIdx, velOut);
+        if (viewMode === VIEW_MAIN && highlightColour != 0) {
+            if (padOffMode === 'toggle') {
+                if (isToggleOff) {
+                    enqueueNoteLED(note, banks[selectedBank].pads[selectedPad].colour);
+                } else {
+                    enqueueNoteLED(note, highlightColour);
+                }
+            } else {
+                enqueueNoteLED(note, highlightColour);
+            }
+        }
+        if (viewMode === VIEW_MAIN && banks[selectedBank].overlay) showPadOverlay(padIdx, displayVelOut);
         needsRedraw = true;
         return;
     }
@@ -984,8 +1095,11 @@ function handleNote(note, vel) {
         const padIdx = note - 68;
 
         /* send midi */
+        const padMode = banks[selectedBank].padmode ?? 'note';
         let noteOut = banks[selectedBank].pads[padIdx].note;
-        if (banks[selectedBank].noteoffs) {
+        const padOffMode = banks[selectedBank].padoffs ?? 'pad-on-off';
+        const releaseToggleKey = `${selectedBank}:${padIdx}`;
+        if (padMode === 'note' && padOffMode === 'pad-on-off') {
             if (banks[selectedBank].output === 'schwung') {
                 try {
                     shadow_send_midi_to_dsp([0x80 | channel, noteOut, vel]);
@@ -999,7 +1113,14 @@ function handleNote(note, vel) {
             }
         }
 
-        if (viewMode === VIEW_MAIN && banks[selectedBank].hlcolour != 0) enqueueNoteLED(note, banks[selectedBank].pads[padIdx].colour);
+        const releaseHighlightColour = banks[selectedBank].hlcolour;
+        if (viewMode === VIEW_MAIN && releaseHighlightColour != 0) {
+            if (padOffMode === 'toggle' && toggledNotes.has(releaseToggleKey)) {
+                enqueueNoteLED(note, releaseHighlightColour);
+            } else {
+                enqueueNoteLED(note, banks[selectedBank].pads[padIdx].colour);
+            }
+        }
         needsRedraw = true;
         return;
     }

@@ -42,7 +42,7 @@
       "lines": [
         "Select pad: press it",
         "",
-        "Note: MIDI note",
+        "Note/CC: value",
         "Name: Custom label",
         "Colour: LED (0-127)",
         "Pad Level: %",
@@ -82,7 +82,8 @@
         "Output: ext/move/sch",
         "Master Pad Level: %",
         "Min Pad Level: 0-127",
-        "Note Offs: On/Off",
+        "Pad Offs: On/Off/Tog",
+        "Pad Mode: Note/CC",
         "Show Overlay: On/Off",
         "H/light: 0-127"
       ]
