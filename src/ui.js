@@ -137,7 +137,7 @@ let viewMode = VIEW_MAIN;
 let settingsMenuState = null;
 let settingsMenuStack = null;
 
-/*    */
+/* Main */
 const CONFIG_LOCATION = "/data/UserData/schwung/modules/overtake/control/config.json";
 let config = {};
 let banks = new Array(NUM_BANKS);
@@ -267,8 +267,6 @@ function getButtons(bankIndex) {
     };
 
     return new Array(ALL_BUTTONS.length).fill(0).map((_, i) => ({
-        get orig_cc() { return config[bankIndex].buttons[i]?.orig_cc ?? ALL_BUTTONS[i]; },
-        set orig_cc(v) { ensureButton(i).orig_cc = v; },
         get cc() { return config[bankIndex].buttons[i]?.cc ?? ALL_BUTTONS[i]; },
         set cc(v) { ensureButton(i).cc = v; },
         get name() { return config[bankIndex].buttons[i]?.name ?? BUTTON_NAMES[i]; },
@@ -364,7 +362,7 @@ export function clamp(value, min, max) {
 }
 
 function getColourForKnobValue(colour = 0, value = 0) {
-    let colourSweep = colourSweeps[colour];
+    let colourSweep = colourSweeps[colour] ?? neutralColourSweep;
     const level = clamp(value, 0, 127) / 127;
     const index = Math.round(level * (colourSweep.length - 1));
     return colourSweep[index];
@@ -693,6 +691,20 @@ function getSelectedLabel() {
     return `Bank ${selectedBank + 1}`;
 }
 
+/* Ensure settings menu cursor stays within the current item list */
+function clampMenuSelection() {
+    if (!settingsMenuState) return;
+    const current = settingsMenuStack ? settingsMenuStack.current() : null;
+    const items = current ? current.items : getSettingsItems();
+    const maxIndex = Math.max(0, items.length - 1);
+    if (settingsMenuState.selectedIndex > maxIndex) {
+        settingsMenuState.selectedIndex = maxIndex;
+        if (settingsMenuStack && settingsMenuStack.current()) {
+            settingsMenuStack.current().selectedIndex = maxIndex;
+        }
+    }
+}
+
 function drawSettingsView() {
     clear_screen();
 
@@ -705,6 +717,9 @@ function drawSettingsView() {
     if (top) {
         top.items = getSettingsItems();
     }
+
+    /* Ensure cursor is valid for the current (possibly shorter) item list */
+    clampMenuSelection();
 
     const footer = settingsMenuState.editing ? 'Jog:Change Clk:Save' : 'Jog:Scroll Clk:Edit';
 
@@ -939,21 +954,20 @@ function handleCC(cc, val) {
             return;
         }
         if (item && item.label === 'Name' && cc === CC_JOG_CLICK && val > 63) {
-            let lastEnteredText = "(empty)";
-            if (selected === 0) lastEnteredText = banks[selectedBank].pads[selectedPad].name;
-            if (selected === 1) lastEnteredText = banks[selectedBank].knobs[selectedKnob].name;
-            if (selected === 2) lastEnteredText = banks[selectedBank].buttons[selectedButton].name;
-            if (selected === 3) lastEnteredText = banks[selectedBank].name;
-            lastEnteredText = lastEnteredText || "(empty)";
+            let lastEnteredText = "";
+            if (selected === 0) lastEnteredText = banks[selectedBank].pads[selectedPad].name ?? "";
+            if (selected === 1) lastEnteredText = banks[selectedBank].knobs[selectedKnob].name ?? "";
+            if (selected === 2) lastEnteredText = banks[selectedBank].buttons[selectedButton].name ?? "";
+            if (selected === 3) lastEnteredText = banks[selectedBank].name ?? "";
+            if (lastEnteredText === "(empty)") lastEnteredText = "";
             openTextEntry({
                 title: "Enter Name",
-                initialText: lastEnteredText === "(none)" ? "" : lastEnteredText,
+                initialText: lastEnteredText,
                 onConfirm: (text) => {
-                    lastEnteredText = text || "(empty)";
-                    if (selected === 0) banks[selectedBank].pads[selectedPad].name = text;
-                    if (selected === 1) banks[selectedBank].knobs[selectedKnob].name = text;
-                    if (selected === 2) banks[selectedBank].buttons[selectedButton].name = text;
-                    if (selected === 3) banks[selectedBank].name = text;
+                    if (selected === 0) banks[selectedBank].pads[selectedPad].name = text || "(empty)";
+                    if (selected === 1) banks[selectedBank].knobs[selectedKnob].name = text || "(empty)";
+                    if (selected === 2) banks[selectedBank].buttons[selectedButton].name = text || "(empty)";
+                    if (selected === 3) banks[selectedBank].name = text || "(empty)";
                 }
             });
             settingsMenuState.editing = false;
@@ -963,11 +977,11 @@ function handleCC(cc, val) {
         }
 
         /* Full LED refresh when Pad Offs or H/light Colour changes */
-        if (item && (item.label === 'Pad Offs' || item.label === 'H/light Colour') && !settingsMenuState.editing && result.needsRedraw) {
+        if (item && (item.label === 'Pad Offs' || item.label === 'H/light Colour') && !settingsMenuState.editing && result && result.needsRedraw) {
             updateLEDs();
         }
 
-        if (result.needsRedraw) {
+        if (result && result.needsRedraw) {
             needsRedraw = true;
         }
         return;
