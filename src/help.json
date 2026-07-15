@@ -85,7 +85,11 @@
         "Pad Offs: On/Off/Tog",
         "Pad Mode: Note/CC",
         "Show Overlay: On/Off",
-        "H/light: 0-127"
+        "H/light: Slight Dim,",
+        "Full Dim, Black,",
+        "White, Lt Grey,",
+        "Dk Grey, Blue,",
+        "Green, Red, None"
       ]
     },
     {

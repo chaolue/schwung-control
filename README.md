@@ -125,7 +125,7 @@ Press a step button:
 | **Pad Offs** | On/Off/Toggle | Pad-off behavior: On/Off (default), On Only, or Toggle |
 | **Pad Mode** | Note/CC | Pads send MIDI notes or CC values |
 | **Show Overlay** | On/Off | Display info when pressing pads/knobs |
-| **H/light Colour** | 0-127 | Pad press highlight colour (default: white, 0: no highlight) |
+| **H/light Colour** | Slight Dim / Full Dim / Black / White / Light Grey / Dark Grey / Blue / Green / Red / None | Pad press highlight colour. Slight/Full Dim use a dimmed version of the pad colour when pad colour is 1–26; otherwise White. None turns highlight off. |
 
 ### Visual Feedback
 - **White pulse** = Item is selected (in settings)

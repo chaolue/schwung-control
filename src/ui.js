@@ -84,9 +84,50 @@ const DEFAULTS = {
         PAD_MODE: 'note',
         OVERLAY: 1,
         NAME: "(empty)",
-        HIGHLIGHTCOLOUR: White
+        HIGHLIGHTCOLOUR: 122
     }
 };
+
+/* Highlight colour dimming maps (pad colour 1-26 -> dim / full-dim partner) */
+const SLIGHT_DIM_MAP = {
+     1: 65,  2: 67,  3: 69,  4: 71,  5: 73,  6: 75,
+     7: 77,  8: 79,  9: 81, 10: 83, 11: 85, 12: 87,
+    13: 89, 14: 91, 15: 91, 16: 95, 17: 97, 18: 101,
+    19: 99, 20: 103, 21: 105, 22: 107, 23: 109, 24: 111,
+    25: 113, 26: 115
+};
+
+const FULL_DIM_MAP = {
+     1: 66,  2: 68,  3: 70,  4: 72,  5: 74,  6: 76,
+     7: 78,  8: 80,  9: 82, 10: 84, 11: 86, 12: 88,
+    13: 90, 14: 92, 15: 92, 16: 96, 17: 98, 18: 102,
+    19: 100, 20: 104, 21: 106, 22: 108, 23: 110, 24: 112,
+    25: 114, 26: 116
+};
+
+const HL_COLOUR_LABELS = {
+    [-1]: 'Slight Dim',
+    [-2]: 'Full Dim',
+    117: 'Black',
+    122: 'White',
+    123: 'Light Grey',
+    124: 'Dark Grey',
+    125: 'Blue',
+    126: 'Green',
+    127: 'Red',
+    0: 'None'
+};
+
+function resolveHighlightColour(hlcolour, padColour) {
+    if (hlcolour === -1) return SLIGHT_DIM_MAP[padColour] ?? White;
+    if (hlcolour === -2) return FULL_DIM_MAP[padColour] ?? White;
+    return hlcolour;
+}
+
+function fmtName(name, maxLen = 8) {
+    if (!name) return '';
+    return name.length > maxLen ? name.slice(0, maxLen - 1) + '…' : name;
+}
 
 /* ============================================================================
  * State
@@ -449,7 +490,7 @@ function getSettingsItems() {
                 min: 0,
                 max: 127,
                 step: 1,
-                format: (v) => `${colourNames[v]}`
+                format: (v) => v
             }),
             createValue('Pad Level', {
                 get: () => banks[selectedBank].pads[selectedPad].level ?? 100,
@@ -555,7 +596,7 @@ function getSettingsItems() {
                 min: 0,
                 max: 127,
                 step: 10,
-                format: (v) => `${colourNames[v]}`
+                format: (v) => v
             })
         ];
     } else {  // bank config
@@ -613,13 +654,14 @@ function getSettingsItems() {
                 get: () => banks[selectedBank].overlay ?? 1,
                 set: (v) => { banks[selectedBank].overlay = v ? 1 : 0; }
             }),
-            createValue('H/light Colour', {
-                get: () => banks[selectedBank].hlcolour ?? DEFAULTS.BANK.HIGHLIGHTCOLOUR,
+            createEnum('H/light Colour', {
+                get: () => {
+                    const v = banks[selectedBank].hlcolour ?? DEFAULTS.BANK.HIGHLIGHTCOLOUR;
+                    return v === 120 ? 122 : v;  // migrate old White default
+                },
                 set: (v) => { banks[selectedBank].hlcolour = v; },
-                min: 0,
-                max: 127,
-                step: 1,
-                format: (v) => v === 0 ? 'Off' : `${colourNames[v]}`
+                options: [-1, -2, 117, 122, 123, 124, 125, 126, 127, 0],
+                format: (v) => HL_COLOUR_LABELS[v] ?? 'White'
             })
         ];
     }
@@ -973,7 +1015,7 @@ function handleNote(note, vel) {
         const padMode = banks[selectedBank].padmode ?? 'note';
         let noteOut = banks[selectedBank].pads[selectedPad].note;
         let ccOut = banks[selectedBank].pads[selectedPad].cc;
-        const highlightColour = banks[selectedBank].hlcolour;
+        const highlightColour = resolveHighlightColour(banks[selectedBank].hlcolour, banks[selectedBank].pads[selectedPad].colour);
         const padOffMode = banks[selectedBank].padoffs ?? 'pad-on-off';
 
         /* edit velocity */
@@ -1113,7 +1155,7 @@ function handleNote(note, vel) {
             }
         }
 
-        const releaseHighlightColour = banks[selectedBank].hlcolour;
+        const releaseHighlightColour = resolveHighlightColour(banks[selectedBank].hlcolour, banks[selectedBank].pads[padIdx].colour);
         if (viewMode === VIEW_MAIN && releaseHighlightColour != 0) {
             if (padOffMode === 'toggle' && toggledNotes.has(releaseToggleKey)) {
                 enqueueNoteLED(note, releaseHighlightColour);
