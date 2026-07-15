@@ -8,7 +8,7 @@ import { MoveBack, MoveMenu, MovePlay, MoveRec, MoveCapture, MoveRecord, MoveLoo
          MoveCopy, MoveUndo, MoveShift,MoveUp, MoveDown, MoveLeft, MoveRight, MoveMainKnob, MoveMainButton,
          MoveRow1, MoveRow2, MoveRow3, MoveRow4, MoveKnob1, MoveKnob2, MoveKnob3, MoveKnob4,
          MoveKnob5, MoveKnob6, MoveKnob7, MoveKnob8, MoveMaster, MoveCCButtons,
-         White, Black, BrightRed, BrightGreen, OrangeRed, Cyan, DarkGrey, WhiteLedDim, WhiteLedBright,
+         White, Black, Red, Green, Blue, LightGrey, DarkGrey, WhiteLedDim, WhiteLedBright,
          colourNames, MovePads, midiNotes} from '/data/UserData/schwung/shared/constants.mjs';
 import { drawMenuHeader, drawMenuList, drawMenuFooter, showOverlay, tickOverlay, drawOverlay,
          dismissOverlayOnInput, menuLayoutDefaults } from '/data/UserData/schwung/shared/menu_layout.mjs';
@@ -119,8 +119,8 @@ const HL_COLOUR_LABELS = {
 };
 
 function resolveHighlightColour(hlcolour, padColour) {
-    if (hlcolour === -1) return SLIGHT_DIM_MAP[padColour] ?? White;
-    if (hlcolour === -2) return FULL_DIM_MAP[padColour] ?? White;
+    if (hlcolour === -1) return SLIGHT_DIM_MAP[padColour] ?? LightGrey;
+    if (hlcolour === -2) return FULL_DIM_MAP[padColour] ?? DarkGrey;
     return hlcolour;
 }
 
@@ -430,9 +430,23 @@ function flushLEDQueue() {
 
 function updateLEDs() {
     /* Pad LEDs  */
-    let pads = banks[selectedBank].pads;
+    const pads = banks[selectedBank].pads;
+    const padOffMode = banks[selectedBank].padoffs ?? 'pad-on-off';
+    const bankHl = banks[selectedBank].hlcolour;
     for (let i = 0; i < NUM_PADS; i++) {
-        enqueueNoteLED(i + 68, pads[i].colour ?? Black);
+        let colour = pads[i].colour ?? Black;
+        if (padOffMode === 'toggle') {
+            const toggleKey = `${selectedBank}:${i}`;
+            if (toggledNotes.has(toggleKey)) {
+                /* Toggled on: show pad colour */
+                colour = pads[i].colour ?? Black;
+            } else {
+                /* Toggled off: show highlight colour */
+                const hl = resolveHighlightColour(bankHl, pads[i].colour);
+                if (hl != 0) colour = hl;
+            }
+        }
+        enqueueNoteLED(i + 68, colour);
     }
 
     /* Knob LEDs  */
@@ -954,6 +968,11 @@ function handleCC(cc, val) {
             return;
         }
 
+        /* Full LED refresh when Pad Offs or H/light Colour changes */
+        if (item && (item.label === 'Pad Offs' || item.label === 'H/light Colour') && !settingsMenuState.editing && result.needsRedraw) {
+            updateLEDs();
+        }
+
         if (result.needsRedraw) {
             needsRedraw = true;
         }
@@ -1119,11 +1138,9 @@ function handleNote(note, vel) {
         if (padChokeGrp) chokes[padChokeGrp] = noteOut;
         if (viewMode === VIEW_MAIN && highlightColour != 0) {
             if (padOffMode === 'toggle') {
-                if (isToggleOff) {
-                    enqueueNoteLED(note, banks[selectedBank].pads[selectedPad].colour);
-                } else {
-                    enqueueNoteLED(note, highlightColour);
-                }
+                /* In toggle mode the LED state is inverted: */
+                /* highlight = active/toggled-on, pad colour = off/pressed-moment */
+                enqueueNoteLED(note, banks[selectedBank].pads[selectedPad].colour);
             } else {
                 enqueueNoteLED(note, highlightColour);
             }
@@ -1158,8 +1175,13 @@ function handleNote(note, vel) {
         const releaseHighlightColour = resolveHighlightColour(banks[selectedBank].hlcolour, banks[selectedBank].pads[padIdx].colour);
         if (viewMode === VIEW_MAIN && releaseHighlightColour != 0) {
             if (padOffMode === 'toggle' && toggledNotes.has(releaseToggleKey)) {
+                /* Toggle is on: show pad colour */
+                enqueueNoteLED(note, banks[selectedBank].pads[padIdx].colour);
+            } else if (padOffMode === 'toggle') {
+                /* Toggle is off: show highlight colour */
                 enqueueNoteLED(note, releaseHighlightColour);
             } else {
+                /* Non-toggle: return to pad colour */
                 enqueueNoteLED(note, banks[selectedBank].pads[padIdx].colour);
             }
         }
