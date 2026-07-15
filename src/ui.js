@@ -119,14 +119,9 @@ const HL_COLOUR_LABELS = {
 };
 
 function resolveHighlightColour(hlcolour, padColour) {
-    if (hlcolour === -1) return SLIGHT_DIM_MAP[padColour] ?? LightGrey;
-    if (hlcolour === -2) return FULL_DIM_MAP[padColour] ?? DarkGrey;
+    if (hlcolour === -1) return SLIGHT_DIM_MAP[padColour] ?? Black;
+    if (hlcolour === -2) return FULL_DIM_MAP[padColour] ?? Black;
     return hlcolour;
-}
-
-function fmtName(name, maxLen = 8) {
-    if (!name) return '';
-    return name.length > maxLen ? name.slice(0, maxLen - 1) + '…' : name;
 }
 
 /* ============================================================================
@@ -442,8 +437,7 @@ function updateLEDs() {
                 colour = pads[i].colour ?? Black;
             } else {
                 /* Toggled off: show highlight colour */
-                const hl = resolveHighlightColour(bankHl, pads[i].colour);
-                if (hl != 0) colour = hl;
+                colour = resolveHighlightColour(bankHl, pads[i].colour);
             }
         }
         enqueueNoteLED(i + 68, colour);
