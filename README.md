@@ -9,15 +9,20 @@ Customisable MIDI controller for use on Ableton Move with Schwung installed.
 ## Features
 
 - 16 Banks of custom pads/knobs/buttons
-- Configurable MIDI channel per bank
+- Configurable MIDI channel per bank, and per pad/knob/button
+- Configurable output destination per bank, and per pad
 - Adjust Pad (level) velocity for bank and individual pads
-- Change MIDI note/cc for pads or knobs/buttons
-- Change colour of pads, knobs and buttons
-- Change knobs between relative or absolute values
+- Change MIDI note for pads or cc for pads/knobs/buttons
+- Change colour of banks, pads, knobs and buttons
 - Assign a name to banks, pads, knobs and buttons
-- Adjust pad release behaviour per bank
+- Change knobs between relative or absolute values
+- Adjust pad mode per bank and per pad (Note/CC)
+- Adjust pad release behaviour per bank and per pad (Pad Offs, including Toggle)
+- Adjust button release behaviour per bank and per button (Button Offs, including Toggle)
 - Open from Tools Menu (Shift + Step13)
 - Three output options: external, move, schwung
+
+> **Note:** When you change a bank-level setting for MIDI Channel, Pad Offs, Pad Mode, Button Offs, or Output, any matching individual pad/knob/button overrides for that bank are reset to follow the bank setting again.
 
 ## Building
 
@@ -76,10 +81,14 @@ Select a pad (press it):
 |---------|-------|-------------|
 | **Note** | 0-127 | MIDI note number to send (Note mode) |
 | **CC** | 0-127 | MIDI CC number to send (CC mode) |
+| **MIDI Channel** | Bank, 1-16 | MIDI channel (Bank = use bank channel) |
 | **Name** | Text | Custom name for the pad |
-| **Colour** | 0-127 | LED colour  |
+| **Colour** | 0-127 | LED colour |
 | **Pad Level** | 0-200% | Velocity multiplier |
 | **Choke Grp** | 0-8 | Choke group (0 = none) |
+| **Pad Offs** | Bank / On/Off / On Only / Toggle | Pad-off behaviour (Bank = use bank setting) |
+| **Pad Mode** | Bank / Note / CC | What the pad sends (Bank = use bank setting) |
+| **Output** | Bank / external / move / schwung | MIDI output destination (Bank = use bank setting) |
 
 **Editing Name:**
 1. Select "Name"
@@ -94,6 +103,7 @@ Touch a knob:
 | Setting | Range | Description |
 |---------|-------|-------------|
 | **CC** | 0-127 | MIDI CC number to send |
+| **MIDI Channel** | Bank, 1-16 | MIDI channel (Bank = use bank channel) |
 | **Name** | Text | Custom name for the knob |
 | **Colour** | 0-3 | LED colour scheme |
 | **Min Value** | 0-127 | Minimum output value |
@@ -108,8 +118,10 @@ Press a button (except Menu, Back or Shift):
 | Setting | Range | Description |
 |---------|-------|-------------|
 | **CC** | 0-127 | MIDI CC number to send |
+| **MIDI Channel** | Bank, 1-16 | MIDI channel (Bank = use bank channel) |
 | **Name** | Text | Custom name for the button |
 | **Colour** | 0-127 | LED colour |
+| **Button Offs** | Bank / On/Off / On Only / Toggle | Button-off behaviour (Bank = use bank setting) |
 
 ### Bank Settings
 
@@ -117,13 +129,15 @@ Press a step button:
 
 | Setting | Options | Description |
 |---------|---------|-------------|
-| **Name** | Text | Custom name for the bank |
 | **MIDI Channel** | 1-16 | MIDI channel for this bank |
-| **Output** | external/move/schwung | MIDI output destination |
+| **Name** | Text | Custom name for the bank |
+| **Bank LED** | 0-127 | LED colour |
 | **Master Pad Level** | 25-250% | Velocity multiplier for all pads |
 | **Min Pad Level** | 0-127 | Velocity minimum for all pads |
-| **Pad Offs** | On/Off/Toggle | Pad-off behavior: On/Off (default), On Only, or Toggle |
+| **Pad Offs** | On/On Only/Toggle | Pad-off behaviour for all pads |
 | **Pad Mode** | Note/CC | Pads send MIDI notes or CC values |
+| **Button Offs** | On/On Only/Toggle | Button-off behaviour for all buttons |
+| **Output** | external/move/schwung | MIDI output destination |
 | **Show Overlay** | On/Off | Display info when pressing pads/knobs |
 | **H/light Colour** | Slight Dim / Full Dim / Black / White / Light Grey / Dark Grey / Blue / Green / Red / None | Pad press highlight colour. Slight/Full Dim use a dimmed version of the pad colour when pad colour is 1–26; otherwise White. None turns highlight off. |
 
@@ -131,7 +145,7 @@ Press a step button:
 - **White pulse** = Item is selected (in settings)
 - **White flash** = Pad is pressed (white is the default highlight colour, this can be changed in Bank settings)
 - **Knob LEDs** = Show current value
-- **Step LEDs** = Show active bank (white) vs inactive (gray)
+- **Step LEDs** = Show active bank (selected colour or white) vs inactive (gray)
 
 ## Advanced Features
 
@@ -161,7 +175,6 @@ Now playing "closed" automatically stops "open" and vice versa!
 Control how sensitive pads are to your playing dynamics:
 
 **Pad Level (per pad):**
-- 0% = Silent (no matter how hard you hit)
 - 50% = Half velocity
 - 100% = Normal (default)
 - 200% = Double velocity
@@ -202,18 +215,19 @@ Output: 100 × 0.9 × 1.5 = 135 (max capped at 127, min at Bank's Min Pad Level)
 
 **Tip:** You can have different banks in different output modes - Bank 1 for external gear, Bank 2 for Move's synths, Bank 3 for Schwung!
 
-### Pad-Offs
+### Pad-Offs and Button-Offs
 
-**Pad-Offs (On/Off):** Send note-off when pad is released
-- Default behavior
+**On/Off:** Send note-off when pad or button is released
+- Default behaviour for pads
 - Use for melodic instruments
 - Allows notes to sustain until you release
 
-**Pad-Offs (On Only):** Don't send note-off (or CC value) messages
+**On Only:** Don't send note-off or CC Off value messages
+- Default behaviour for buttons
 - Use for drum machines
 - Each hit is independent
 
-**Pad-Offs (Toggle):** Toggle between note-on/note-off (or CC value) messages
+**Toggle:** Toggle between note-on/note-off or CC On/Off (127/0) messages
 - Use as a control surface
 
 
@@ -296,8 +310,21 @@ Your configuration is stored in:
 - MIDI Channel: 1
 - Master Pad Level: 100%
 - Min Pad Level: 1
-- Output: external
 - Pad-Offs: On/Off
-- Pad Mode Note
+- Pad Mode: Note
+- Button Offs: On Only
+- Output: external
 - Show Overlay: On
 - H/light Colour: White
+
+---
+
+### Bank vs Individual Settings
+
+Most bank settings can also be overridden per pad, knob, or button:
+- **MIDI Channel** — set per pad/knob/button (`0` = use bank channel)
+- **Pad Offs / Pad Mode** — set per pad (`Bank` = use bank setting)
+- **Button Offs** — set per button (`Bank` = use bank setting)
+- **Output** — set per pad (`Bank` = use bank output)
+
+> **Important:** When you change a bank-level setting for MIDI Channel, Pad Offs, Pad Mode, Button Offs, or Output, any matching individual overrides for that bank are cleared and will follow the bank setting again.
