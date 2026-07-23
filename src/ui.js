@@ -1405,14 +1405,15 @@ function handleNote(note, vel) {
         /* choke group handling */
         let padChokeGrp = pad.chokegrp;
         if (padChokeGrp) {
-            if (typeof chokes[padChokeGrp] === 'undefined') chokes[padChokeGrp] = -1;
-            if (chokes[padChokeGrp] === noteOut) chokes[padChokeGrp] = -1; //remove current pad if exists
+            if (typeof chokes[padChokeGrp] === 'undefined' || chokes[padChokeGrp] === noteOut) {
+                chokes[padChokeGrp] = -1;
+            }
         }
 
         /* send midi */
         function sendNoteOn() {
             sendMidi(padOutput, 0x90, channel, noteOut, velOut);
-            if (chokes[padChokeGrp] != -1) {
+            if (padChokeGrp && chokes[padChokeGrp] != -1) {
                 sendMidi(padOutput, 0x80, channel, chokes[padChokeGrp], 0);
             }
             if (padChokeGrp) chokes[padChokeGrp] = noteOut;
