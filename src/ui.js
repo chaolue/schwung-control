@@ -17,7 +17,6 @@ import { createMenuState, handleMenuInput } from '/data/UserData/schwung/shared/
 import { createMenuStack } from '/data/UserData/schwung/shared/menu_stack.mjs';
 import { openTextEntry, isTextEntryActive, handleTextEntryMidi, drawTextEntry,
          tickTextEntry } from '/data/UserData/schwung/shared/text_entry.mjs';
-import * as os from 'os';
 
 /* ============================================================================
  * Constants
@@ -387,8 +386,8 @@ function showKnobOverlay(knobNum, val = "") {
         value = Math.round(banks[selectedBank].knobs[knobNum].value);
     }
 
-    const displayName = (name !== DEFAULTS.KNOB.NAME) ? name : `Knob: ${knobNum + 1}`;
-    showOverlay(displayName, `${value}  CC: ${cc}`, OVERLAY_DURATION);
+    const displayName = (name !== DEFAULTS.KNOB.NAME) ? name : `Knob${knobNum + 1}`;
+    showOverlay(`${displayName} CC: ${cc}`, value, OVERLAY_DURATION);
     return true;
 }
 
@@ -407,7 +406,7 @@ function showButtonOverlay(buttonNum, val = "") {
         value = "On";
     }
     const displayName = (name !== BUTTON_NAMES[buttonNum]) ? name : BUTTON_NAMES[buttonNum];
-    showOverlay(displayName, `${value}  CC: ${cc}`, OVERLAY_DURATION);
+    showOverlay(`${displayName} CC: ${cc}`, value, OVERLAY_DURATION);
     return true;
 }
 
@@ -421,11 +420,11 @@ function showPadOverlay(padNum, vel) {
         valueInfo = `CC: ${cc}`;
     } else {
         const note = banks[selectedBank].pads[padNum].note;
-        valueInfo = `Note: ${midiNotes[note]} (${note})`;
+        valueInfo = `Note: ${note}`;
     }
     const displayName = (name !== DEFAULTS.PAD.NAME) ? name : valueInfo;
     const valueText = padMode === 'cc' ? (vel === 127 ? 'On' : 'Off') : vel;
-    showOverlay(displayName, `${valueText}  Pad: ${padNum + 1}`, OVERLAY_DURATION);
+    showOverlay(`Pad${padNum + 1} ${displayName}`, valueText, OVERLAY_DURATION);
     return true;
 }
 
@@ -433,7 +432,7 @@ function showPadOverlay(padNum, vel) {
 function showStepOverlay(stepNum) {
     let name = banks[stepNum].name;
     const displayName = (name !== DEFAULTS.BANK.NAME) ? name : `Bank ${stepNum + 1}`;
-    showOverlay("Bank changed", displayName, OVERLAY_DURATION);
+    showOverlay("Bank:", displayName, OVERLAY_DURATION);
     return true;
 }
 
@@ -1033,6 +1032,9 @@ function handleCC(cc, val) {
         } else {
             saveConfig();
             clearAllLEDs();
+            if (typeof shadow_set_overtake_suppress_master_volume === 'function') {
+                shadow_set_overtake_suppress_master_volume(0);
+            }
             host_exit_module();
             return;
         }
@@ -1541,7 +1543,13 @@ function midiIgnore(msg) {
 function init() {
     /* Clear LEDs first */
     clearAllLEDs();
-    os.sleep(200);
+
+    /* Take the master/volume knob outright: Move otherwise processes CC 79 /
+     * master-touch note 8 in parallel (real volume change) and steals the
+     * OLED for its own volume overlay while the knob is held. */
+    if (typeof shadow_set_overtake_suppress_master_volume === 'function') {
+        shadow_set_overtake_suppress_master_volume(1);
+    }
 
     /* Initial sync */
     banks = loadConfig();
