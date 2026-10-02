@@ -16,6 +16,11 @@ Customisable MIDI controller for use on Ableton Move with Schwung installed.
 - Change colour of banks, pads, knobs and buttons
 - Assign a name to banks, pads, knobs and buttons
 - Change knobs between relative or absolute values
+- Optional Knob Pages per bank: top pad row (25-32) becomes page selectors for 8 pages of knob mappings
+- Optional Pad Pages per bank: a second page of 32 pads (64 total, Push-style) switched via Up button or jog click
+- Optional Pad Layout per bank: chromatic keyboard across all 32 pads with +/- octave shift
+- Optional MIDI In per bank: incoming external CCs update knob/button/pad state so LEDs and values stay in sync
+- Optional Scenes per bank: Row1-4 buttons switch between 4 full control layers (pads + knobs + buttons)
 - Adjust pad mode per bank and per pad (Note/CC)
 - Adjust pad release behaviour per bank and per pad (Pad Offs, including Toggle)
 - Adjust button release behaviour per bank and per button (Button Offs, including Toggle)
@@ -136,6 +141,12 @@ Press a step button:
 | **Min Pad Level** | 0-127 | Velocity minimum for all pads |
 | **Pad Offs** | On/On Only/Toggle | Pad-off behaviour for all pads |
 | **Pad Mode** | Note/CC | Pads send MIDI notes or CC values |
+| **Knob Pages** | On/Off | Top pad row (25-32) selects between 8 knob pages |
+| **Pad Pages** | Off / Up Toggle / Up Hold / Jog Toggle | Second page of 32 pads; page control style (mutually exclusive with Knob Pages) |
+| **Pad Layout** | Off / Chromatic / Rows +4 / Rows +5 | Pads become a keyboard; Up/Down shift octaves |
+| **KB Root** | 0-96 | Keyboard root note (only shown when Pad Layout is on) |
+| **MIDI In** | On/Off | Incoming external CCs update this bank's control state |
+| **Scenes** | On/Off | Row1-4 buttons select between 4 sub-banks, each with the full option set |
 | **Button Offs** | On/On Only/Toggle | Button-off behaviour for all buttons |
 | **Output** | external/move/schwung | MIDI output destination |
 | **Show Overlay** | On/Off | Display info when pressing pads/knobs |
@@ -244,7 +255,81 @@ Output: 100 × 0.9 × 1.5 = 135 (max capped at 127, min at Bank's Min Pad Level)
 - Perfect for controlling plugins with existing values
 - Good for volume/filter controls
 
-### Colour Schemes
+### Knob Pages
+
+Enable **Knob Pages** in a bank's settings to turn the top pad row (pads 25-32) into knob page selectors:
+
+- **Pad 25** selects page 1 - the bank's existing knob mappings
+- **Pads 26-32** select pages 2-8 - 7 additional pages of 8 knob mappings each (56 extra mappings per bank)
+- The lit pad shows the active page; the overlay shows the bank name and page number (or page name)
+- Each page can be named: in a knob's settings on that page, use **Page Name**
+- The master knob is shared across all pages
+- Each page's knobs have their own CC, name, colour, range, multiplier and relative/absolute settings - configure them in Settings just like normal knobs
+
+When Knob Pages is off (default), pads 25-32 behave as normal pads. Existing pad configurations are preserved when you toggle the feature, so you can switch it on and off without losing mappings.
+
+### Pad Pages
+
+Enable **Pad Pages** in a bank's settings to double the pad grid to 64 pads (Push-style 8 per column):
+
+- **Page 1** is the bank's existing pads; **page 2** is a full second set with their own note/CC, name, colour, level, choke group, pad-offs and pad-mode settings - defaults are offset by one grid (CC 33-64, notes 68-99)
+- Toggle state and MIDI In sync are tracked per page - switch back and everything is where you left it
+- Pads held across a page flip still send their note-off/CC-off correctly
+
+**Page controls** (choose per bank):
+
+| Mode | Behaviour |
+|------|-----------|
+| **Up Toggle** | Press the +/Up pad button to flip pages; its LED shows the page (bright = page 2, dim = page 1) |
+| **Up Hold** | Hold +/Up for page 2, release to return to page 1 |
+| **Jog Toggle** | Click the main jog wheel to flip pages (main view only) |
+
+When a page control uses the Up button, that button's own mapping is unavailable for the bank. **Pad Pages, Knob Pages and Keyboard Layout are mutually exclusive** - enabling one turns the others off.
+
+### Keyboard Layout
+
+Set **Pad Layout** in a bank's settings to turn the whole 32-pad grid into a chromatic keyboard. Two layouts:
+
+- **Chromatic**: pads ascend left-to-right, bottom row lowest - 32 consecutive semitones (over 2.5 octaves) from the **KB Root** note (default C2)
+- **Rows +4**: overlapping rows - each row ascends chromatically but starts only +4 semitones above the row below (major-thirds tuning), so shapes repeat every third row and the grid covers ~1.6 octaves
+- **Rows +5**: guitar/Push-style fourths - each row starts +5 semitones up, so scales and chord shapes finger identically across rows like strings on a guitar
+
+Both layouts:
+
+- **Up (+) / Down (-)** shift the entire grid by octaves; the range is clamped so no pad can exceed MIDI 0-127
+- LEDs show the keyboard: **C** is lit white as the octave marker, naturals are dim, sharps/flats are dark; toggled-on pads light fully
+- Pressing a pad lights **every pad that plays the same note** - on overlapping layouts (+4/+5) duplicates across rows flash together, making the intervals between positions visible
+- Velocity, Pad Level, toggle pad-offs and per-pad MIDI channel/output still apply; CC-mode pads pass through unchanged
+- Pads held across an octave shift still send the correct note-off
+
+**Pad Layout is mutually exclusive with Knob Pages and Pad Pages** - enabling any one turns the others off. While active, Up/Down are consumed for octave shift and can't be mapped as buttons.
+
+### MIDI In (External Sync)
+
+Enable **MIDI In** in a bank's settings so incoming external CC messages update the module's internal state:
+
+- **Knobs**: matching CC + channel updates the stored value and LED ring - touching the knob afterwards picks up from the synced position instead of jumping
+- **Toggle buttons and CC-mode pads**: incoming values sync the on/off state and LED
+- Matching is done across **all banks** (and all configured knob pages), so state is current whichever bank you switch to
+- Matching uses each control's CC and effective MIDI channel (per-control override, falling back to the bank channel), exactly as used for output
+- Received values are never re-transmitted - state only - so devices that echo CCs can't create a feedback loop
+
+**Note:** Knob pages 2-8 only respond to MIDI In once they have been configured (to avoid default CCs matching on untouched pages).
+
+### Scenes
+
+Enable **Scenes** in a bank's settings to turn the bank into a set of 4 sub-banks. **Row1-4** buttons select scenes 1-4 - the active scene's button stays lit and the overlay shows `Bank / Scene N`.
+
+Each scene is a complete sub-bank with the **full set of bank options**, configured through Settings exactly like a bank:
+
+- Its own 32 pads, 9 knobs and 13 buttons, each with their own CC/note, name, colour, channel and mode settings
+- Its own bank-level settings: name, MIDI channel, output, pad level, pad-offs/pad-mode, button-offs, highlight colour, overlay toggle
+- Its own **Knob Pages**, **Pad Pages** and **Pad Layout** - e.g. scene 1 can have knob pages while scene 2 is a chromatic keyboard and scene 3 uses pad pages
+- Its own **MIDI In** toggle - incoming CCs sync the state of whichever scenes have it enabled
+
+Scene 1 is the bank's existing configuration. Scenes 2-4 start with default mappings stored under the bank's `scenedata` config. Scenes are nameable via the bank **Name** setting while that scene is active - the scene-select overlay shows `Bank name / Scene name`.
+
+Toggle state and MIDI In sync are tracked per scene, and pads held across a scene switch still send their note-off/CC-off. While Scenes is on, **Row1-4 are no longer MIDI-mappable** (they're the selectors). Knob Pages, Pad Pages and Pad Layout remain mutually exclusive *within* a scene (they all claim the pad grid), but are independent per scene.
 
 **Pads & Buttons:** 0-127 individual colours
 
@@ -316,6 +401,11 @@ Your configuration is stored in:
 - Output: external
 - Show Overlay: On
 - H/light Colour: White
+- Knob Pages: Off
+- Pad Pages: Off
+- Pad Layout: Off
+- MIDI In: Off
+- Scenes: Off
 
 ---
 

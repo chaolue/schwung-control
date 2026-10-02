@@ -67,7 +67,9 @@
         "Colour: Scheme (0-3)",
         "Min/Max: Range",
         "Multiplier: 0.25x-8x",
-        "CC Relative: On/Off"
+        "CC Relative: On/Off",
+        "Page Name: label",
+        " (knob pages on)"
       ]
     },
     {
@@ -94,6 +96,13 @@
         "Min Pad Level: 0-127",
         "Pad Offs: On/Off/Tog",
         "Pad Mode: Note/CC",
+        "Knob Pages: On/Off",
+        "Pad Pages: Off/Up/",
+        " Up-Hold/Jog",
+        "Pad Layout: Off/",
+        " Chrom/+4/+5",
+        "MIDI In: On/Off",
+        "Scenes: On/Off",
         "Button Offs: On",
         " On-Only/Tog",
         "Output: ext/move/sch",
@@ -152,6 +161,110 @@
         "Perfect for hi-hats:",
         "Pad 1: Closed (Grp 1)",
         "Pad 2: Open (Grp 1)"
+      ]
+    },
+    {
+      "title": "Knob Pages",
+      "lines": [
+        "Bank setting.",
+        "When on, pads",
+        "25-32 select one",
+        "of 8 knob pages.",
+        "",
+        "Pad 25 = page 1",
+        "(existing knobs).",
+        "Pages 2-8 add",
+        "7x8 knob maps.",
+        "Master knob is",
+        "shared.",
+        "",
+        "Pad 25-32 config",
+        "is preserved."
+      ]
+    },
+    {
+      "title": "Pad Pages",
+      "lines": [
+        "Bank setting.",
+        "Second page of 32",
+        "pads (64 total).",
+        "",
+        "Controls:",
+        "Up Toggle: press +",
+        "Up Hold: hold +",
+        "Jog Toggle: click",
+        "jog wheel",
+        "",
+        "Exclusive with",
+        "Knob Pages +",
+        "Layout (within a",
+        "scene). State",
+        "kept per page."
+      ]
+    },
+    {
+      "title": "Keyboard",
+      "lines": [
+        "Pad Layout bank",
+        "setting turns all",
+        "32 pads into a",
+        "keyboard:",
+        " Chromatic,",
+        " Rows+4 or +5",
+        " (guitar/Push)",
+        "",
+        "Up/Down: octave",
+        "shift.",
+        "KB Root: base note",
+        "(default C2).",
+        "",
+        "White = C, grey =",
+        "natural, dark =",
+        "sharp/flat.",
+        "Pressing lights",
+        "all pads with the",
+        "same note.",
+        "",
+        "Exclusive with",
+        "Knob/Pad Pages."
+      ]
+    },
+    {
+      "title": "MIDI In",
+      "lines": [
+        "Bank setting.",
+        "Incoming external",
+        "CCs update control",
+        "state + LEDs.",
+        "",
+        "Matches CC + ch",
+        "across all banks",
+        "and knob pages.",
+        "",
+        "Knobs pick up from",
+        "synced values.",
+        "Nothing is re-sent."
+      ]
+    },
+    {
+      "title": "Scenes",
+      "lines": [
+        "Bank setting.",
+        "Row1-4 buttons",
+        "switch between 4",
+        "sub-banks - each",
+        "has the full bank",
+        "option set (pads,",
+        "knobs, pages,",
+        "layout, MIDI In).",
+        "",
+        "Active scene stays",
+        "lit; overlay shows",
+        "Bank / Scene.",
+        "Rename via Name.",
+        "",
+        "Row1-4 are not",
+        "mappable while on."
       ]
     },
     {

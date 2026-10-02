@@ -17,6 +17,7 @@ mkdir -p dist/control
 echo "Packaging..."
 cp src/module.json dist/control/
 cp src/ui.js dist/control/
+cp src/help.json dist/control/
 
 # Create tarball for release
 cd dist
